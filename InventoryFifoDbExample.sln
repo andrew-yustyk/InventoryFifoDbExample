@@ -16,6 +16,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{925E
 		scripts\DDLDrop.sql = scripts\DDLDrop.sql
 		scripts\ExampleSeed.sql = scripts\ExampleSeed.sql
 		scripts\TruncateAllData.sql = scripts\TruncateAllData.sql
+		scripts\_TestFunction.sql = scripts\_TestFunction.sql
 	EndProjectSection
 EndProject
 Global
