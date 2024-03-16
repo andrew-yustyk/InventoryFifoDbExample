@@ -10,6 +10,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFiles", "SolutionFi
 		qodana.yaml = qodana.yaml
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{925ED047-A45A-4392-B0A3-DB3D03DF1351}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\DDLCreate.sql = scripts\DDLCreate.sql
+		scripts\DDLDrop.sql = scripts\DDLDrop.sql
+		scripts\ExampleSeed.sql = scripts\ExampleSeed.sql
+		scripts\TruncateAllData.sql = scripts\TruncateAllData.sql
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
