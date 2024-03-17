@@ -1,11 +1,11 @@
-﻿INSERT INTO [dbo].[PurchaseHeader] ([PurchaseHeaderID], [UnitID], [BusinessDate])
+﻿INSERT INTO dbo.PurchaseHeader (PurchaseHeaderID, UnitID, BusinessDate)
     VALUES
         -- Units are same for all examples
         ('A1F17EA7-7D3B-4EF2-848E-6286E0651E3B', 1, '2023-12-07'),
         ('7F63B0AD-31E0-4A3C-8A69-5CE74F56814A', 1, '2023-12-06'),
         ('129193F9-57E5-4335-B474-EF188A3166ED', 1, '2023-12-05');
 
-INSERT INTO [dbo].[PurchaseLine] ([PurchaseLineID], [PurchaseHeaderID], [ItemID], [Quantity], [Cost])
+INSERT INTO dbo.PurchaseLine (PurchaseLineID, PurchaseHeaderID, ItemID, Quantity, Cost)
     VALUES
         -- Example 1
         ('BA63EC32-A312-434B-B867-AB2DD3315C30', 'A1F17EA7-7D3B-4EF2-848E-6286E0651E3B', 1, 40, 15),
@@ -21,7 +21,7 @@ INSERT INTO [dbo].[PurchaseLine] ([PurchaseLineID], [PurchaseHeaderID], [ItemID]
         ('E8A08602-6C53-490A-A099-E878314071FA', 'A1F17EA7-7D3B-4EF2-848E-6286E0651E3B', 4, 40, 15),
         ('25DE2FE2-11E3-476F-9514-EFF1E30B6102', '129193F9-57E5-4335-B474-EF188A3166ED', 4, 25, 20);
 
-INSERT INTO [dbo].[Inventory] ([UnitID], [BusinessDate], [ItemID], [Quantity], [Cost])
+INSERT INTO dbo.Inventory (UnitID, BusinessDate, ItemID, Quantity, Cost)
     VALUES
         -- Example 1
         (1, '2023-12-08', 1, 100, 0),
@@ -35,7 +35,7 @@ INSERT INTO [dbo].[Inventory] ([UnitID], [BusinessDate], [ItemID], [Quantity], [
         -- Example 4
         (1, '2023-12-01', 4, 20, 10);
 
-INSERT INTO [dbo].[ItemsToCalcCost] ([ItemID])
+INSERT INTO dbo.ItemsToCalcCost (ItemID)
     VALUES (1),
            (2),
            (3),
