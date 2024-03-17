@@ -14,6 +14,9 @@ CREATE FUNCTION dbo.GetLastPurchase(@unit int, @date date, @item int) RETURNS de
 AS
 BEGIN
     DECLARE @lastPch decimal(8, 2)
+
+    /* Can we be sure that only one purchase line/header exists for the same date and unit?
+       Or, at least, all the purchase line for the particular date ad unit have the same cost? */
     SELECT TOP (1) @lastPch = pl.Cost
         FROM dbo.PurchaseLine AS pl
             INNER JOIN dbo.PurchaseHeader ph
@@ -39,13 +42,11 @@ BEGIN
     /* If there is no record with the requested date in the Inventory table,
        then we need to return a last purchase cost. */
     IF @baseQty IS NULL
-        RETURN dbo.GetLastPurchase(@unit, @date, @item)
+        RETURN dbo.GetLastPurchase(@unit, @date, @item);
 
     /* TODO: Implement main algorithm */
     RETURN 42;
 END;
 GO;
 
-SELECT ItemID AS ItemID,
-       dbo.GetFiFo(1, '2023-12-08', ItemID)
-    FROM dbo.ItemsToCalcCost;
+SELECT ItemID AS ItemID, dbo.GetFiFo(1, '2023-12-08', ItemID) AS FIFO FROM dbo.ItemsToCalcCost;
