@@ -6,6 +6,10 @@ IF OBJECT_ID('dbo.GetLastPurchaseCost') IS NOT NULL
     DROP FUNCTION dbo.GetLastPurchaseCost;
 GO;
 
+IF OBJECT_ID('dbo.GetNormalizedPurchaseLinesForFifo') IS NOT NULL
+    DROP FUNCTION dbo.GetNormalizedPurchaseLinesForFifo;
+GO;
+
 
 CREATE FUNCTION dbo.GetLastPurchaseCost(@UnitID int, @CountDate date, @ItemID int) RETURNS decimal(8, 2)
 AS
@@ -15,15 +19,71 @@ BEGIN
     DECLARE @lastPchCost decimal(8, 2);
     SELECT TOP (1) @lastPchCost = ISNULL(pl.Cost, 0)
         FROM dbo.PurchaseLine AS pl
-            INNER JOIN dbo.PurchaseHeader ph
-                ON pl.PurchaseHeaderID = ph.PurchaseHeaderID
-        WHERE ph.BusinessDate < @CountDate
-          AND pl.ItemID = @ItemID
+        INNER JOIN dbo.PurchaseHeader ph
+            ON pl.PurchaseHeaderID = ph.PurchaseHeaderID
+        WHERE ph.BusinessDate < @CountDate AND pl.ItemID = @ItemID
           AND ph.UnitID = @UnitID /* maybe need to reorder item and unit, depends on data distribution */
         ORDER BY ph.BusinessDate DESC;
 
     RETURN ISNULL(@lastPchCost, 0);
 END;
+GO;
+
+
+CREATE FUNCTION dbo.GetNormalizedPurchaseLinesForFifo(@UnitID int, @CountDate date, @ItemID int, @BaseQuantity decimal(12, 2))
+    RETURNS TABLE AS RETURN
+        /* Here we get all purchased lines for specified "UnitID" and "ItemID" that were added
+           before the current inventory calculation and after the previous inventory calculation.
+           An additional value "LifoTotalQuantity" for each row means a sum of the quantity for "this" and newer rows
+           because in FIFO inventory calculation we assume that older items were sold and we should take into account
+           only the newer rows whose sum is equal or exceeds the BaseQuantity (current inventory items quantity).
+           Based on this field we can decide whether the row should be fully included, partially included,
+           or excluded from the inventory cost calculation.
+           -------------------------------------------------------
+           | Cost  | Quantity | LifoTotalQuantity | BusinessDate |
+           |-------|----------|-------------------|--------------|
+           | 15.00 | 40.00    | 40.00             | 2023-12-07   |
+           | 20.00 | 25.00    | 65.00             | 2023-12-06   |
+           | 20.00 | 30.00    | 95.00             | 2023-12-05   |
+           | 18.00 | 45.00    | 140.00            | 2023-12-04   |
+           | 17.00 | 20.00    | 160.00            | 2023-12-03   |
+           ------------------------------------------------------- */
+        WITH purchaseLinesWithLIFOAggregatedQuantity AS (
+            SELECT pl.Cost AS Cost
+                 , pl.Quantity AS Quantity
+                /* TODO: here we still have a collision in a case of 2+ purchases with different prices for the same date */
+                 , SUM(pl.Quantity) OVER (ORDER BY ph.BusinessDate DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS LifoTotalQuantity
+                 , ph.BusinessDate AS BusinessDate -- FOR DEBUG ONLY
+                FROM PurchaseLine AS pl
+                INNER JOIN dbo.PurchaseHeader ph
+                    ON pl.PurchaseHeaderID = ph.PurchaseHeaderID
+                WHERE ph.BusinessDate < @CountDate AND ph.UnitID = @UnitID AND pl.ItemID = @ItemID)
+        /* Here we process each previously selected PurchaseLine row and normalize its quantity (and LifoTotalQuantity)
+           depending on the base quantity (current inventory items quantity).
+           By comparing previously calculated LifoTotalQuantity and the base quantity we decide should be the row included
+           or excluded from the inventory cost calculation:
+             - if LifoTotalQuantity <= BaseQuantity, then this row still should be fully included in the calculation;
+             - if LifoTotalQuantity > BaseQuantity, then we need either include only part of the row's quantity or exclude it.
+               For partial inclusion, we must calculate the amount by which the current LifoTotalQuantity exceeds the base amount
+               and decrease the PurchaseLine Quantity by this difference: Quantity = Quantity - (LifoTotalQuantity - BaseQuantity).
+               If result quantity is less then 0, then we set it to 0 because zero quantity can safely be included in the
+               weighted average cost calculation while negative number - can't and we should care about its filtering.
+           ------------------------------------------------------------------------------------------------------
+           | Cost  | Quantity | LifoTotalQuantity | QuantityOriginal | LifoTotalQuantityOriginal | BusinessDate |
+           | ----- | -------- | ----------------- | ---------------- | ------------------------- | ------------ |
+           | 15.00 | 40.00    | 40.00             | 40.00            | 40.00                     | 2023-12-07   |
+           | 20.00 | 25.00    | 65.00             | 25.00            | 65.00                     | 2023-12-06   |
+           | 20.00 | 30.00    | 95.00             | 30.00            | 95.00                     | 2023-12-05   |
+           | 18.00 |  5.00    | 100.00            | 45.00            | 140.00                    | 2023-12-04   |
+           | 17.00 |  0.00    | 100.00            | 20.00            | 160.00                    | 2023-12-03   |
+           ------------------------------------------------------------------------------------------------------ */
+        SELECT Cost AS Cost
+             , IIF(LifoTotalQuantity > @BaseQuantity, GREATEST(Quantity - LifoTotalQuantity + @BaseQuantity, 0), Quantity) AS Quantity
+             , LEAST(LifoTotalQuantity, @BaseQuantity) AS LifoTotalQuantity -- May be unnecessary, need to compare Sum(Quantity) and Max(LifoTotalQuantity) performance.
+             , BusinessDate AS BusinessDate                                 -- FOR DEBUG ONLY
+             , Quantity AS QuantityOriginal                                 -- FOR DEBUG ONLY
+             , LifoTotalQuantity AS LifoTotalQuantityOriginal               -- FOR DEBUG ONLY
+            FROM purchaseLinesWithLIFOAggregatedQuantity;
 GO;
 
 
