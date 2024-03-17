@@ -5,7 +5,8 @@
         ('7F63B0AD-31E0-4A3C-8A69-5CE74F56814A', 1, '2023-12-06'),
         ('129193F9-57E5-4335-B474-EF188A3166ED', 1, '2023-12-05'),
         ('6CE7551D-251E-4B5E-97FB-AD2E4D4093D1', 1, '2023-12-04'),
-        ('C94527E6-8C24-4CAA-946D-E2901E6AE509', 1, '2023-12-03');
+        ('C94527E6-8C24-4CAA-946D-E2901E6AE509', 1, '2023-12-03')
+;
 
 INSERT INTO dbo.PurchaseLine (PurchaseLineID, PurchaseHeaderID, ItemID, Quantity, Cost)
     VALUES
@@ -27,7 +28,8 @@ INSERT INTO dbo.PurchaseLine (PurchaseLineID, PurchaseHeaderID, ItemID, Quantity
         ('D507FCF1-D86A-4AE6-A511-CADC9469985A', '7F63B0AD-31E0-4A3C-8A69-5CE74F56814A', 5, 25, 20),
         ('5DB398AE-412B-4085-9406-65BE5073E595', '129193F9-57E5-4335-B474-EF188A3166ED', 5, 30, 20),
         ('035BE196-0A8D-4AAA-9928-7FAB8A2E39FD', '6CE7551D-251E-4B5E-97FB-AD2E4D4093D1', 5, 45, 18),
-        ('09F68336-5ADC-4409-99F4-29B5D8D5DCBB', 'C94527E6-8C24-4CAA-946D-E2901E6AE509', 5, 20, 17);
+        ('09F68336-5ADC-4409-99F4-29B5D8D5DCBB', 'C94527E6-8C24-4CAA-946D-E2901E6AE509', 5, 20, 17)
+;
 
 INSERT INTO dbo.Inventory (UnitID, BusinessDate, ItemID, Quantity, Cost)
     VALUES
@@ -44,10 +46,12 @@ INSERT INTO dbo.Inventory (UnitID, BusinessDate, ItemID, Quantity, Cost)
         (1, '2023-12-01', 4, 20, 10),
         -- Example 2
         (1, '2023-12-08', 5, 100, 0),
-        (1, '2023-12-01', 5, 50, 10);
+        (1, '2023-12-01', 5, 50, 10)
+;
 
 INSERT INTO dbo.ItemsToCalcCost (ItemID)
     VALUES (1),
            (2),
            (3),
-           (4);
+           (4)
+;

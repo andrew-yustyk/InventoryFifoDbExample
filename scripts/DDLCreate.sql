@@ -5,7 +5,8 @@
             PurchaseHeaderID uniqueidentifier NOT NULL,
             UnitID           int              NOT NULL,
             BusinessDate     date             NOT NULL,
-            CONSTRAINT PK_PurchaseHeader PRIMARY KEY NONCLUSTERED (PurchaseHeaderID)
+            CONSTRAINT PK_PurchaseHeader
+                PRIMARY KEY NONCLUSTERED (PurchaseHeaderID)
         );
 
         CREATE CLUSTERED INDEX CIX_PurchaseHeader ON dbo.PurchaseHeader (UnitID, BusinessDate);
@@ -20,7 +21,8 @@ IF (OBJECT_ID('dbo.PurchaseLine', 'U') IS NULL)
             ItemID           int              NOT NULL,
             Quantity         decimal(12, 2)   NOT NULL,
             Cost             decimal(8, 2)    NOT NULL,
-            CONSTRAINT PK_PurchaseLine PRIMARY KEY NONCLUSTERED (PurchaseLineID)
+            CONSTRAINT PK_PurchaseLine
+                PRIMARY KEY NONCLUSTERED (PurchaseLineID)
         );
 
         CREATE CLUSTERED INDEX CIX_PurchaseLine ON dbo.PurchaseLine (PurchaseHeaderID);
@@ -35,7 +37,8 @@ IF (OBJECT_ID('dbo.Inventory', 'U') IS NULL)
             ItemID       INT            NOT NULL,
             Quantity     DECIMAL(12, 2) NOT NULL,
             Cost         DECIMAL(8, 2)  NOT NULL,
-            CONSTRAINT PK_Inventory PRIMARY KEY (UnitID, BusinessDate, ItemID)
+            CONSTRAINT PK_Inventory
+                PRIMARY KEY (UnitID, BusinessDate, ItemID)
         );
     END;
 

@@ -10,13 +10,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFiles", "SolutionFi
 		qodana.yaml = qodana.yaml
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{925ED047-A45A-4392-B0A3-DB3D03DF1351}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{476E8928-16E1-4632-9B52-391A73BFE885}"
 	ProjectSection(SolutionItems) = preProject
 		scripts\DDLCreate.sql = scripts\DDLCreate.sql
 		scripts\DDLDrop.sql = scripts\DDLDrop.sql
 		scripts\ExampleSeed.sql = scripts\ExampleSeed.sql
 		scripts\TruncateAllData.sql = scripts\TruncateAllData.sql
-		scripts\_TestFunction.sql = scripts\_TestFunction.sql
+		scripts\_InventoryFIFOScript.sql = scripts\_InventoryFIFOScript.sql
+		scripts\_InventoryFunctions.sql = scripts\_InventoryFunctions.sql
 	EndProjectSection
 EndProject
 Global
