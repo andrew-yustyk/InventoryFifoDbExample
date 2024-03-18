@@ -57,7 +57,9 @@ CREATE FUNCTION dbo.GetNormalizedPurchaseLinesForFifo(@UnitID int, @CountDate da
                 FROM PurchaseLine AS pl
                 INNER JOIN dbo.PurchaseHeader ph
                     ON pl.PurchaseHeaderID = ph.PurchaseHeaderID
-                WHERE ph.BusinessDate < @CountDate AND ph.UnitID = @UnitID AND pl.ItemID = @ItemID)
+                WHERE ph.BusinessDate < @CountDate AND ph.UnitID = @UnitID AND pl.ItemID = @ItemID
+            -- AND pl.Quantity > 0 /* there is no make sense to select lines with qty > 0 as they don't affect weighted average cost, but depends on DB constraints */
+        )
         /* Here we process each previously selected PurchaseLine row and normalize its quantity (and LifoTotalQuantity)
            depending on the base quantity (current inventory items quantity).
            By comparing previously calculated LifoTotalQuantity and the base quantity we decide should be the row included
@@ -98,8 +100,23 @@ BEGIN
 
     /* If there is no record with the requested date in the Inventory table,
        then we need to return a last purchase cost. */
-    IF @baseQty IS NULL
+    IF (@baseQty IS NULL)
         RETURN dbo.GetLastPurchaseCost(@UnitID, @CountDate, @ItemID);
+
+    IF (0 = @baseQty)
+        RETURN 0; /* Skip inventory cost calculation if there are no items in it. */
+
+    DECLARE @totalCost decimal(8, 2)
+    DECLARE @totalQuantity decimal(12, 2)
+    SELECT @totalCost = SUM(Cost * Quantity), @totalQuantity = MAX(LifoTotalQuantity)
+        FROM dbo.GetNormalizedPurchaseLinesForFifo(@UnitID, @CountDate, @ItemId, @baseQty)
+        WHERE Quantity > 0;
+
+    IF (@totalQuantity > @baseQty)
+        RETURN 1 / 0; /* Should never occur in real life. */
+
+    IF (@totalQuantity = @baseQty)
+        RETURN @totalCost / @totalQuantity
 
     /* TODO: Implement main algorithm */
     RETURN 42;
