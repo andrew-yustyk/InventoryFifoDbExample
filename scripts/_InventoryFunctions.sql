@@ -106,8 +106,8 @@ BEGIN
     IF (0 = @baseQty)
         RETURN 0; /* Skip inventory cost calculation if there are no items in it. */
 
-    DECLARE @totalCost decimal(8, 2)
-    DECLARE @totalQuantity decimal(12, 2)
+    DECLARE @totalCost decimal(8, 2);
+    DECLARE @totalQuantity decimal(12, 2);
     SELECT @totalCost = SUM(Cost * Quantity), @totalQuantity = MAX(LifoTotalQuantity)
         FROM dbo.GetNormalizedPurchaseLinesForFifo(@UnitID, @CountDate, @ItemId, @baseQty)
         WHERE Quantity > 0;
@@ -116,9 +116,18 @@ BEGIN
         RETURN 1 / 0; /* Should never occur in real life. */
 
     IF (@totalQuantity = @baseQty)
-        RETURN @totalCost / @totalQuantity
+        RETURN @totalCost / @totalQuantity;
 
-    /* TODO: Implement main algorithm */
-    RETURN 42;
+    DECLARE @prevInvCost decimal(8, 2);
+    DECLARE @prevInvQty decimal(12, 2);
+    SELECT @prevInvCost = ISNULL(inv.Cost, 0), @prevInvQty = ISNULL(inv.Quantity, 0)
+        FROM dbo.Inventory AS inv
+        WHERE inv.BusinessDate < @CountDate AND inv.UnitID = @UnitID AND inv.ItemID = @ItemID;
+
+    SET @prevInvQty = LEAST(@prevInvQty, @baseQty - @totalQuantity);
+    SET @totalQuantity = @totalQuantity + @prevInvQty;
+    SET @totalCost = @totalCost + @prevInvCost * @prevInvQty;
+
+    RETURN @totalCost / @totalQuantity;
 END;
 GO;
