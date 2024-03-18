@@ -66,7 +66,7 @@ CREATE FUNCTION dbo.GetPurchaseLinesForFifo(@UnitID int, @CountDate date, @ItemI
 GO;
 
 
-CREATE FUNCTION dbo.GetFiFo(@UnitID int, @CountDate date, @ItemID int) RETURNS decimal
+CREATE FUNCTION dbo.GetFiFo(@UnitID int, @CountDate date, @ItemID int) RETURNS decimal(8, 2)
 AS
 BEGIN
     DECLARE @baseQty decimal(12, 2);
@@ -79,7 +79,7 @@ BEGIN
        then we need to return a last purchase cost. */
     IF (@baseQty IS NULL)
         BEGIN
-            DECLARE @lastPchCost decimal;
+            DECLARE @lastPchCost decimal(8, 2);
 
             /* TODO: Need to clarify a case with a possible collision when 2+ purchases with different prices
                took place on the same day, for the same unit and item. */
@@ -92,14 +92,14 @@ BEGIN
                 ORDER BY ph.BusinessDate DESC;
 
             RETURN ISNULL(@lastPchCost, 0);
-        END
+        END;
 
     /* Skip inventory cost calculation if there are no items in it. */
     IF (0 = @baseQty)
         RETURN 0;
 
-    DECLARE @totalCost decimal;
-    DECLARE @totalQuantity decimal;
+    DECLARE @totalCost decimal(8, 2);
+    DECLARE @totalQuantity decimal(12, 2);
     SELECT @totalCost = SUM(Cost * Quantity), @totalQuantity = MAX(LifoTotalQuantity)
         FROM dbo.GetPurchaseLinesForFifo(@UnitID, @CountDate, @ItemId, @baseQty)
         WHERE Quantity > 0;
@@ -114,8 +114,8 @@ BEGIN
         RETURN @totalCost / @totalQuantity;
 
     /* Get additional quantity and cost values from the previous inventory */
-    DECLARE @prevInvCost decimal;
-    DECLARE @prevInvQty decimal;
+    DECLARE @prevInvCost decimal(8, 2);
+    DECLARE @prevInvQty decimal(12, 2);
     SELECT TOP (1) @prevInvCost = ISNULL(inv.Cost, 0), @prevInvQty = ISNULL(inv.Quantity, 0)
         FROM dbo.Inventory AS inv
         WHERE inv.BusinessDate < @CountDate AND inv.ItemID = @ItemID AND inv.UnitID = @UnitID
