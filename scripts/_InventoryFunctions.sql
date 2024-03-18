@@ -28,6 +28,7 @@ CREATE FUNCTION dbo.GetPurchaseLinesForFifo(@UnitID int, @CountDate date, @ItemI
         WITH purchaseLinesWithLIFOAggregatedQuantity AS (
             SELECT pl.Cost AS Cost
                  , pl.Quantity AS Quantity
+                 /* TODO: CHECK PERFORMANCE BOTTLENECK FOR THIS SUM APPROACH */
                  , SUM(pl.Quantity) OVER (ORDER BY ph.BusinessDate DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS LifoTotalQuantity
                  , ph.BusinessDate AS BusinessDate -- FOR DEBUG ONLY
                 FROM PurchaseLine AS pl
@@ -97,6 +98,7 @@ BEGIN
 
     DECLARE @totalCost decimal(38, 4);
     DECLARE @totalQuantity decimal(13, 2);
+    /* TODO: CHECK PERFORMANCE BOTTLENECK FOR THIS SUM */
     SELECT @totalCost = SUM(Cost * Quantity), @totalQuantity = MAX(LifoTotalQuantity)
         FROM dbo.GetPurchaseLinesForFifo(@UnitID, @CountDate, @ItemId, @baseQty)
         WHERE Quantity > 0;
