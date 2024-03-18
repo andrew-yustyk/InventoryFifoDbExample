@@ -28,8 +28,7 @@ CREATE FUNCTION dbo.GetPurchaseLinesForFifo(@UnitID int, @CountDate date, @ItemI
         WITH purchaseLinesWithLIFOAggregatedQuantity AS (
             SELECT pl.Cost AS Cost
                  , pl.Quantity AS Quantity
-                /* TODO: here we still have a collision in a case of 2+ purchases with different prices for the same date */
-                 , CAST(SUM(pl.Quantity) OVER (ORDER BY ph.BusinessDate DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS decimal(12, 2)) AS LifoTotalQuantity
+                 , SUM(pl.Quantity) OVER (ORDER BY ph.BusinessDate DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS LifoTotalQuantity
                  , ph.BusinessDate AS BusinessDate -- FOR DEBUG ONLY
                 FROM PurchaseLine AS pl
                 INNER JOIN dbo.PurchaseHeader ph
@@ -57,7 +56,7 @@ CREATE FUNCTION dbo.GetPurchaseLinesForFifo(@UnitID int, @CountDate date, @ItemI
            | 17.00 |  0.00    | 100.00            | 20.00            | 160.00                    | 2023-12-03   |
            ------------------------------------------------------------------------------------------------------ */
         SELECT Cost AS Cost
-             , CAST(IIF(LifoTotalQuantity > @BaseQuantity, GREATEST(Quantity - (LifoTotalQuantity - @BaseQuantity), 0), Quantity) AS decimal(12, 2)) AS Quantity
+             , IIF(LifoTotalQuantity > @BaseQuantity, GREATEST(Quantity - (LifoTotalQuantity - @BaseQuantity), 0), Quantity) AS Quantity
              , LEAST(LifoTotalQuantity, @BaseQuantity) AS LifoTotalQuantity -- May be unnecessary, need to compare Sum(Quantity) and Max(LifoTotalQuantity) performance.
              , BusinessDate AS BusinessDate                                 -- FOR DEBUG ONLY
              , Quantity AS QuantityOriginal                                 -- FOR DEBUG ONLY
@@ -66,7 +65,7 @@ CREATE FUNCTION dbo.GetPurchaseLinesForFifo(@UnitID int, @CountDate date, @ItemI
 GO;
 
 
-CREATE FUNCTION dbo.GetFiFo(@UnitID int, @CountDate date, @ItemID int) RETURNS decimal(8, 2)
+CREATE FUNCTION dbo.GetFiFo(@UnitID int, @CountDate date, @ItemID int) RETURNS decimal(38, 4)
 AS
 BEGIN
     DECLARE @baseQty decimal(12, 2);
@@ -81,8 +80,6 @@ BEGIN
         BEGIN
             DECLARE @lastPchCost decimal(8, 2);
 
-            /* TODO: Need to clarify a case with a possible collision when 2+ purchases with different prices
-               took place on the same day, for the same unit and item. */
             SELECT TOP (1) @lastPchCost = ISNULL(pl.Cost, 0)
                 FROM dbo.PurchaseLine AS pl
                 INNER JOIN dbo.PurchaseHeader ph
@@ -98,19 +95,19 @@ BEGIN
     IF (0 = @baseQty)
         RETURN 0;
 
-    DECLARE @totalCost decimal(8, 2);
-    DECLARE @totalQuantity decimal(12, 2);
+    DECLARE @totalCost decimal(38, 4);
+    DECLARE @totalQuantity decimal(13, 2);
     SELECT @totalCost = SUM(Cost * Quantity), @totalQuantity = MAX(LifoTotalQuantity)
         FROM dbo.GetPurchaseLinesForFifo(@UnitID, @CountDate, @ItemId, @baseQty)
         WHERE Quantity > 0;
 
     /* Should never occur in real life, except we have some error in the "GetNormalizedPurchaseLinesForFifo" func */
-    IF (CAST(@totalQuantity AS decimal(12, 2)) > @baseQty)
+    IF (@totalQuantity > @baseQty)
         RETURN 1 / 0;
 
     /* Return FIFO if purchase lines quantity is enough for the current inventory.
        TODO: Clarify about quantity precision */
-    IF (CAST(@totalQuantity AS decimal(12, 2)) = @baseQty)
+    IF (@totalQuantity = @baseQty)
         RETURN @totalCost / @totalQuantity;
 
     /* Get additional quantity and cost values from the previous inventory */
