@@ -48,7 +48,7 @@ INSERT INTO dbo.Inventory (UnitID, BusinessDate, ItemID, Quantity, Cost)
         -- Example 4
         (1, '2023-12-01', 4, 20, 10),
         (1, '2023-11-24', 4, 20, 8),
-        -- Example 2
+        -- Example 5
         (1, '2023-12-08', 5, 100, 0),
         (1, '2023-12-01', 5, 50, 10),
         (1, '2023-11-24', 5, 20, 8)
