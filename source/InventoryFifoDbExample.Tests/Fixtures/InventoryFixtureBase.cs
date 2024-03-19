@@ -6,6 +6,7 @@ using InventoryFifoDbExample.Tests.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace InventoryFifoDbExample.Tests.Fixtures;
 
@@ -28,8 +29,8 @@ public abstract class InventoryFixtureBase : IDisposable, IAsyncDisposable
         var options = new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true };
         var services = new ServiceCollection()
             .AddSingleton(Configuration)
-            .AddLogging()
             .AddOptions()
+            .AddLogging(b => b.AddDebug())
             .AddDbContextFactory<InventoryDbContext>(b => b.UseSqlServer(Configuration.GetConnectionString(DbConnectionName)));
 
         ServiceProvider = services.BuildServiceProvider(options);

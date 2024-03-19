@@ -5,13 +5,13 @@ namespace InventoryFifoDbExample.Tests.Fixtures;
 
 public class DataBuilder
 {
-    public Random Random { get; set; } = new Random();
+    public Random Random { get; set; } = Random.Shared;
 
     public ushort MinQuantity { get; set; } = 10;
     public ushort MaxQuantity { get; set; } = 100;
 
     public ushort MinCost { get; set; } = 5;
-    public ushort MaxCost { get; set; } = 50;
+    public ushort MaxCost { get; set; } = 100;
 
     public PurchaseHeader GetPurchaseHeader(int unitId, DateOnly businessDate)
     {

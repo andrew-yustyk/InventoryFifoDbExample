@@ -29,6 +29,16 @@ public class InventoryTest : IDisposable, IAsyncDisposable
     }
 
     [Fact(Skip = SkipReason)]
+    public async Task InventorySeedCleanup()
+    {
+        await using var context = _contextFactory.CreateDbContextWithoutTracking();
+        await context.Set<ItemsToCalcCost>().ExecuteDeleteAsync();
+        await context.Set<Inventory>().ExecuteDeleteAsync();
+        await context.Set<PurchaseLine>().ExecuteDeleteAsync();
+        await context.Set<PurchaseHeader>().ExecuteDeleteAsync();
+    }
+
+    [Fact(Skip = SkipReason)]
     public async Task InventorySeedInt()
     {
         const ushort unitsOffset = 0;
@@ -70,11 +80,11 @@ public class InventoryTest : IDisposable, IAsyncDisposable
         _outputHelper.WriteLine("{0}: Seeding last inventory data for: {1:O}", DateTime.Now, endDate);
         foreach (var unitId in unitIds)
         {
-            await context.AddRangeAsync(itemIds.Select(itemId => builder.GetInventory(unitId, endDate, itemId, 50, 0)));
+            await context.AddRangeAsync(itemIds.Select(itemId => builder.GetInventory(unitId, endDate, itemId, 1000, 0)));
             await context.SaveChangesAndClearAsync();
         }
 
-        await SeedItemsToCalcCost(context, itemIds);
+        await SeedItemsToCalcCost(context, itemIds.OrderBy(_ => builder.Random.Next()).ToArray());
     }
 
     private async Task SeedItemsToCalcCost(InventoryDbContext context, int[] itemIds)
