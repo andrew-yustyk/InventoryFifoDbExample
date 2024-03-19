@@ -1,7 +1,5 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InventoryFifoDbExampleTests", "source\InventoryFifoDbExampleTests\InventoryFifoDbExampleTests.csproj", "{813AE527-D893-47E4-87DA-C5FC1D4AD0AD}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFiles", "SolutionFiles", "{2C1A9C3D-ACCF-401E-B45E-42F9F079B8CB}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
@@ -19,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{476E
 		scripts\_InventoryFIFOScript.sql = scripts\_InventoryFIFOScript.sql
 		scripts\_InventoryFunctions.sql = scripts\_InventoryFunctions.sql
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InventoryFifoDbExample.Tests", "source\InventoryFifoDbExample.Tests\InventoryFifoDbExample.Tests.csproj", "{813AE527-D893-47E4-87DA-C5FC1D4AD0AD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
