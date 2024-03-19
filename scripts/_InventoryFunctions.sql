@@ -107,22 +107,20 @@ BEGIN
     IF (@totalQuantity > @baseQty)
         RETURN 1 / 0;
 
-    /* Return FIFO if purchase lines quantity is enough for the current inventory.
-       TODO: Clarify about quantity precision */
-    IF (@totalQuantity = @baseQty)
-        RETURN @totalCost / @totalQuantity;
+    IF (@totalQuantity < @baseQty)
+        BEGIN
+            /* Get additional quantity and cost values from the previous inventory */
+            DECLARE @prevInvCost decimal(8, 2);
+            DECLARE @prevInvQty decimal(12, 2);
+            SELECT TOP (1) @prevInvCost = ISNULL(inv.Cost, 0), @prevInvQty = ISNULL(inv.Quantity, 0)
+                FROM dbo.Inventory AS inv
+                WHERE inv.BusinessDate < @CountDate AND inv.ItemID = @ItemID AND inv.UnitID = @UnitID
+                ORDER BY inv.BusinessDate DESC;
 
-    /* Get additional quantity and cost values from the previous inventory */
-    DECLARE @prevInvCost decimal(8, 2);
-    DECLARE @prevInvQty decimal(12, 2);
-    SELECT TOP (1) @prevInvCost = ISNULL(inv.Cost, 0), @prevInvQty = ISNULL(inv.Quantity, 0)
-        FROM dbo.Inventory AS inv
-        WHERE inv.BusinessDate < @CountDate AND inv.ItemID = @ItemID AND inv.UnitID = @UnitID
-        ORDER BY inv.BusinessDate DESC;
-
-    SET @prevInvQty = LEAST(ISNULL(@prevInvQty, 0), @baseQty - @totalQuantity);
-    SET @totalQuantity = @totalQuantity + @prevInvQty;
-    SET @totalCost = @totalCost + @prevInvQty * ISNULL(@prevInvCost, 0);
+            SET @prevInvQty = LEAST(ISNULL(@prevInvQty, 0), @baseQty - @totalQuantity);
+            SET @totalQuantity = @totalQuantity + @prevInvQty;
+            SET @totalCost = @totalCost + @prevInvQty * ISNULL(@prevInvCost, 0);
+        END
 
     RETURN @totalCost / @totalQuantity;
 END;
