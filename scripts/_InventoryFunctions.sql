@@ -35,7 +35,7 @@ CREATE FUNCTION dbo.GetPurchaseLinesForFifo(@UnitID int, @CountDate date, @ItemI
                 INNER JOIN dbo.PurchaseHeader ph
                     ON pl.PurchaseHeaderID = ph.PurchaseHeaderID
                 WHERE ph.BusinessDate < @CountDate AND ph.UnitID = @UnitID AND pl.ItemID = @ItemID
-                  AND pl.Quantity > 0 /* there is no make sense to select lines with qty > 0 as they don't affect weighted average cost, but depends on DB constraints */
+                  -- AND pl.Quantity > 0 -- PERFORMANCE DEGRADATION
         )
         /* Here we process each previously selected PurchaseLine row and normalize its quantity (and LifoTotalQuantity)
            depending on the base quantity (current inventory items quantity).
@@ -100,8 +100,8 @@ BEGIN
     DECLARE @totalQuantity decimal(13, 2);
     /* TODO: CHECK PERFORMANCE BOTTLENECK FOR THIS SUM */
     SELECT @totalCost = SUM(Cost * Quantity), @totalQuantity = MAX(LifoTotalQuantity)
-        FROM dbo.GetPurchaseLinesForFifo(@UnitID, @CountDate, @ItemId, @baseQty)
-        WHERE Quantity > 0;
+        FROM dbo.GetPurchaseLinesForFifo(@UnitID, @CountDate, @ItemId, @baseQty);
+        -- WHERE Quantity > 0; -- PERFORMANCE DEGRADATION
 
     /* Should never occur in real life, except we have some error in the "GetNormalizedPurchaseLinesForFifo" func */
     IF (@totalQuantity > @baseQty)
