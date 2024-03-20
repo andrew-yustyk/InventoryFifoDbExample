@@ -71,8 +71,8 @@ SELECT *
  */
 DECLARE @UnitID int = 5;
 DECLARE @CountDate date = '2024-01-01';
--- SET @UnitID = 1;
--- SET @CountDate = '2023-12-08';
+SET @UnitID = 1;
+SET @CountDate = '2023-12-08';
 
 WITH
     pchItems1 AS (
@@ -89,13 +89,34 @@ WITH
         SELECT ItemID AS ItemID
              , Cost AS Cost
              , IIF(LifoTotalQuantity > BaseQuantity, GREATEST(Quantity - LifoTotalQuantity + BaseQuantity, 0), Quantity) AS Quantity
+             , BaseQuantity AS BaseQuantity
             FROM pchItems1
             WHERE Quantity - LifoTotalQuantity + BaseQuantity > 0),
     totals    AS (
         SELECT ItemID
              , SUM(Cost * Quantity) AS TotalCost
              , SUM(Quantity) AS LifoTotalQuantity
+             , BaseQuantity AS BaseQuantity
             FROM pchItems2
-            GROUP BY ItemID)
-SELECT *
-    FROM totals;
+            GROUP BY ItemID, BaseQuantity)
+SELECT calcItems.ItemID,
+       (CASE
+            WHEN totals.ItemID IS NULL
+                THEN (
+                SELECT TOP (1) ISNULL(pl.Cost, 0)
+                    FROM dbo.PurchaseLine AS pl
+                    INNER JOIN dbo.PurchaseHeader ph
+                        ON pl.PurchaseHeaderID = ph.PurchaseHeaderID
+                    WHERE ph.UnitID = @UnitID AND ph.BusinessDate < @CountDate AND pl.ItemID = calcItems.ItemID
+                    ORDER BY ph.BusinessDate DESC)
+            WHEN totals.LifoTotalQuantity >= totals.BaseQuantity
+                THEN CASE
+                         WHEN totals.LifoTotalQuantity = totals.BaseQuantity
+                             THEN totals.TotalCost / totals.LifoTotalQuantity
+                             ELSE 1 / 0 -- should be impossible in real life
+                     END
+            ELSE 42
+        END) AS FIFO
+    FROM ItemsToCalcCost AS calcItems
+    LEFT JOIN totals
+        ON calcItems.ItemID = totals.ItemID;
