@@ -64,3 +64,38 @@ DECLARE @BaseQuantity decimal(12, 2) = 1000;
 SELECT *
     FROM dbo.GetPurchaseLinesForFifo2(@UnitID, @CountDate, @BaseQuantity)
     ORDER BY ItemID;
+
+
+/*
+ * INLINE implementation. WIP
+ */
+DECLARE @UnitID int = 5;
+DECLARE @CountDate date = '2024-01-01';
+-- SET @UnitID = 1;
+-- SET @CountDate = '2023-12-08';
+
+WITH
+    pchItems1 AS (
+        SELECT pl.ItemID AS ItemID
+             , pl.Cost AS Cost
+             , pl.Quantity AS Quantity
+             , inv.Quantity AS BaseQuantity
+             , SUM(pl.Quantity) OVER (PARTITION BY pl.ItemID ORDER BY ph.BusinessDate DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS LifoTotalQuantity
+            FROM PurchaseLine AS pl
+            INNER JOIN dbo.PurchaseHeader ph ON pl.PurchaseHeaderID = ph.PurchaseHeaderID
+            INNER JOIN dbo.Inventory AS inv ON inv.UnitID = @UnitID AND inv.BusinessDate = @CountDate AND pl.ItemID = inv.ItemID
+            WHERE ph.BusinessDate < @CountDate AND ph.UnitID = @UnitID),
+    pchItems2 AS (
+        SELECT ItemID AS ItemID
+             , Cost AS Cost
+             , IIF(LifoTotalQuantity > BaseQuantity, GREATEST(Quantity - LifoTotalQuantity + BaseQuantity, 0), Quantity) AS Quantity
+            FROM pchItems1
+            WHERE Quantity - LifoTotalQuantity + BaseQuantity > 0),
+    totals    AS (
+        SELECT ItemID
+             , SUM(Cost * Quantity) AS TotalCost
+             , SUM(Quantity) AS LifoTotalQuantity
+            FROM pchItems2
+            GROUP BY ItemID)
+SELECT *
+    FROM totals;
