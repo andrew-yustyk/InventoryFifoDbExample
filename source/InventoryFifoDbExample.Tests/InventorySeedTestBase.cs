@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using InventoryFifoDbExample.Tests.Context;
@@ -7,29 +7,24 @@ using InventoryFifoDbExample.Tests.Fixtures;
 using InventoryFifoDbExample.Tests.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace InventoryFifoDbExample.Tests;
 
-[Collection(nameof(InventoryTestCollection1))]
-public class InventoryTest : IDisposable, IAsyncDisposable
+public abstract class InventorySeedTestBase
 {
-    private const string SkipReason = "explicit";
-
+    private readonly InventoryFixtureBase _fixture;
     private readonly ITestOutputHelper _outputHelper;
-    private readonly AsyncServiceScope _serviceScope;
     private readonly IDbContextFactory<InventoryDbContext> _contextFactory;
 
-    public InventoryTest(InventoryFixture1 fixture, ITestOutputHelper outputHelper)
+    protected InventorySeedTestBase(InventoryFixtureBase fixture, ITestOutputHelper outputHelper)
     {
+        _fixture = fixture;
         _outputHelper = outputHelper;
-        _serviceScope = fixture.ServiceProvider.CreateAsyncScope();
-        _contextFactory = _serviceScope.ServiceProvider.GetRequiredService<IDbContextFactory<InventoryDbContext>>();
+        _contextFactory = _fixture.ServiceProvider.GetRequiredService<IDbContextFactory<InventoryDbContext>>();
     }
 
-    [Fact(Skip = SkipReason)]
-    public async Task InventorySeedCleanup()
+    protected async Task DataCleanup()
     {
         await using var context = _contextFactory.CreateDbContextWithoutTracking();
         await context.Set<ItemsToCalcCost>().ExecuteDeleteAsync();
@@ -38,8 +33,7 @@ public class InventoryTest : IDisposable, IAsyncDisposable
         await context.Set<PurchaseHeader>().ExecuteDeleteAsync();
     }
 
-    [Fact(Skip = SkipReason)]
-    public async Task InventorySeedInt()
+    protected async Task DataSeed()
     {
         const ushort unitsOffset = 0;
         const ushort unitsCount = 10;
@@ -57,7 +51,7 @@ public class InventoryTest : IDisposable, IAsyncDisposable
         foreach (var unitId in unitIds)
         {
             var head = builder.GetPurchaseHeader(unitId, startDate.AddDays(-1));
-            var items = itemIds.Select(itemId => builder.GetPurchaseLine(head.PurchaseHeaderId, itemId, false, false)).ToList();
+            var items = itemIds.Select(itemId => builder.GetPurchaseLine(head.PurchaseHeaderId, itemId, _fixture.GenerateDecimalQuantity, _fixture.GenerateDecimalCost)).ToList();
             var inventories = items.Select(x => builder.GetInventory(unitId, startDate, x.ItemId, x.Quantity, x.Cost));
             await context.Set<PurchaseHeader>().AddAsync(head);
             await context.Set<PurchaseLine>().AddRangeAsync(items);
@@ -72,7 +66,8 @@ public class InventoryTest : IDisposable, IAsyncDisposable
             foreach (var unitId in unitIds)
             {
                 var head = context.Set<PurchaseHeader>().Add(builder.GetPurchaseHeader(unitId, genDate)).Entity;
-                await context.Set<PurchaseLine>().AddRangeAsync(itemIds.Select(itemId => builder.GetPurchaseLine(head.PurchaseHeaderId, itemId, false, false)));
+                await context.Set<PurchaseLine>()
+                    .AddRangeAsync(itemIds.Select(itemId => builder.GetPurchaseLine(head.PurchaseHeaderId, itemId, _fixture.GenerateDecimalQuantity, _fixture.GenerateDecimalCost)));
                 await context.SaveChangesAndClearAsync();
             }
         }
@@ -105,15 +100,5 @@ public class InventoryTest : IDisposable, IAsyncDisposable
                    """;
 
         await context.Database.ExecuteSqlRawAsync(sql);
-    }
-
-    public void Dispose()
-    {
-        _serviceScope.Dispose();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await _serviceScope.DisposeAsync();
     }
 }

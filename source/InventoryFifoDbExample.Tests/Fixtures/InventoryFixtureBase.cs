@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using InventoryFifoDbExample.Tests.Configuration;
 using InventoryFifoDbExample.Tests.Context;
@@ -12,8 +11,13 @@ namespace InventoryFifoDbExample.Tests.Fixtures;
 
 public abstract class InventoryFixtureBase : IDisposable, IAsyncDisposable
 {
-    [Required]
-    public abstract string DbConnectionName { get; }
+    public abstract bool GenerateDecimalCost { get; }
+
+    public abstract bool GenerateDecimalQuantity { get; }
+
+    protected abstract string DbConnectionName { get; }
+
+    public required int DbContextPoolSize { get; init; } = Math.Min(Environment.ProcessorCount, 1);
 
     public string EnvironmentName { get; }
 
@@ -31,7 +35,7 @@ public abstract class InventoryFixtureBase : IDisposable, IAsyncDisposable
             .AddSingleton(Configuration)
             .AddOptions()
             .AddLogging(b => b.AddDebug())
-            .AddDbContextFactory<InventoryDbContext>(b => b.UseSqlServer(Configuration.GetConnectionString(DbConnectionName)));
+            .AddPooledDbContextFactory<InventoryDbContext>(b => b.UseSqlServer(Configuration.GetConnectionString(DbConnectionName)), DbContextPoolSize);
 
         ServiceProvider = services.BuildServiceProvider(options);
     }

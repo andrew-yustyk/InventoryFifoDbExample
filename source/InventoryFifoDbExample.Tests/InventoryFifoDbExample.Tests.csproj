@@ -9,6 +9,10 @@
 
   <ItemGroup>
     <None Include="appsettings*.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

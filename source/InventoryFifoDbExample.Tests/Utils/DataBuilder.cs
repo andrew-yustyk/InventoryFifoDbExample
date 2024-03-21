@@ -1,7 +1,7 @@
 ﻿using System;
 using InventoryFifoDbExample.Tests.Entities;
 
-namespace InventoryFifoDbExample.Tests.Fixtures;
+namespace InventoryFifoDbExample.Tests.Utils;
 
 public class DataBuilder
 {
