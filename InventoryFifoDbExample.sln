@@ -14,9 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{476E
 		scripts\DDLDrop.sql = scripts\DDLDrop.sql
 		scripts\ExampleSeed.sql = scripts\ExampleSeed.sql
 		scripts\TruncateAllData.sql = scripts\TruncateAllData.sql
-		scripts\_InventoryFIFOScript.sql = scripts\_InventoryFIFOScript.sql
-		scripts\_InventoryFunctions.sql = scripts\_InventoryFunctions.sql
-		scripts\_inventoryFIFOScriptNew.sql = scripts\_inventoryFIFOScriptNew.sql
+		scripts\_inventoryFIFOScriptLast.sql = scripts\_inventoryFIFOScriptLast.sql
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InventoryFifoDbExample.Tests", "source\InventoryFifoDbExample.Tests\InventoryFifoDbExample.Tests.csproj", "{813AE527-D893-47E4-87DA-C5FC1D4AD0AD}"
